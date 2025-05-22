@@ -49,6 +49,7 @@ export function setupAuth(app: Express) {
           return done(null, user);
         } catch (error) {
           console.error("Error during Google authentication:", error);
+          console.error("Error details:", JSON.stringify(error, null, 2));
           return done(error as Error);
         }
       }
