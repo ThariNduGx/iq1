@@ -7,7 +7,7 @@ import { insertUserSchema } from "@shared/schema";
 // Environment variables for Google OAuth
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || "";
-const CALLBACK_URL = process.env.CALLBACK_URL || "http://localhost:5000/api/auth/google/callback";
+const CALLBACK_URL = process.env.CALLBACK_URL || "https://50f08424-4db7-427b-854e-3aa8fa35a974-00-20tp46kjys5mv.worf.replit.dev/api/auth/google/callback";
 
 if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
   console.error("Google OAuth credentials are missing. Authentication will not work properly.");
