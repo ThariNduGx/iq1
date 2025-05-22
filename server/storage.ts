@@ -75,6 +75,8 @@ export class SupabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
+    console.log("Attempting to create user with data:", insertUser);
+    
     const { data, error } = await supabase
       .from('users')
       .insert({
@@ -88,6 +90,7 @@ export class SupabaseStorage implements IStorage {
       
     if (error) {
       console.error("Error creating user:", error);
+      console.error("Error details:", JSON.stringify(error, null, 2));
       throw error;
     }
     
