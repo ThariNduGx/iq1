@@ -1,0 +1,166 @@
+
+Phase 0: Pre-Project Setup & Deep Dive
+Understand the Core Problem: Re-read Sections 1 and 2. Ensure you deeply understand the pain points of Digital 101: manual data collection (15-20 hours weekly), missed optimization due to reporting delays, inconsistent metrics, and lack of holistic views.
+Solidify Aims & Objectives (Section 4): Your primary aim is to "develop a comprehensive real-time analytics solution that eliminates manual reporting while providing deeper campaign insights." Keep the key objectives (streamline data collection, dynamic reports, cross-platform correlations, scalability) in mind throughout the development.
+Familiarize Yourself with the "Why": Internalize the Value Proposition (Section 3) and Expected Benefits (Section 9). This will guide your feature prioritization and design choices. For example, the 80% reduction in manual reporting and 15-20% ROI improvement are key success metrics.
+Review Q&A Preparation (Last pages): This section is GOLD. It preempts many challenges and outlines solutions for technical complexity, risk management, API challenges, security, performance, and maintenance. Keep these in mind from day one.
+Phase 1: Planning & Design
+This phase combines "Project Kickoff" and "Design Completion" from your timeline.
+Step 1: Requirements Gathering & Refinement 
+Confirm Core Platforms: Google Analytics, Google Search console, Google Ads, Facebook, Instagram, TikTok. Pinterest is mentioned in Q&A Section 5, so confirm if it's in the initial scope or a future enhancement.
+Identify Key Metrics: Work with Digital 101 (or simulate this if they are your client) to list the exact metrics they need from each platform. This is crucial for "normalizing varying metrics and terminologies" (Section 5, Technical Challenges).
+Define "Real-time": Clarify expectations. The document mentions "real-time insights (within 5 minutes)" (Section 5, Current vs. Desired State). This will influence your data fetching and processing strategy.
+Sketch UI Mockups/Wireframes:
+Dashboard layout: How will data be presented? (Section 3, Core Functionality: "Unified interface").
+Visualization types: What charts/graphs are most effective? (Section 3: "Customizable visualizations").
+User interaction: How will users filter, sort, and drill down into data? (Section 5: "Designing an intuitive interface for non-technical users").
+Technology Selection Confirmation:
+Frontend: Next.js, React Query, Tailwind CSS.
+Backend: Next.js API routes, Supabase.
+Data Visualization: React-based charting libraries (e.g., Chart.js, Recharts, Nivo).
+Deployment: Vercel.
+(This is already well-defined in Section 6).
+Architecture Design:
+Plan your abstraction layer for API integrations (Q&A, Section 1).
+Design the unified data model for normalized metrics (Q&A, Section 1).
+Outline how Next.js API routes will interact with Supabase and external platform APIs.
+Consider the "serverless architecture" and "cloud-native development approaches" (Q&A, Section 4).
+Database Schema Design :
+Based on the key metrics and data model, design your Supabase tables.
+Consider tables for users (if applicable), client accounts, campaigns, platform-specific data, normalized data, and API credentials (securely stored).
+Think about relationships and indexing for performance.
+API Integration Plan :
+Research the specific API documentation for Google Ads, Meta (Facebook/Instagram), and TikTok. Note authentication methods (OAuth 2.0 is planned, Section 6), rate limits, data structures, and query languages (e.g., GAQL for Google Ads, Q&A Section 5).
+Plan for OAuth token management (Q&A Section 5: "centralized token management service"). Supabase can help with this.
+
+
+Phase 2: Backend Foundation 
+Step 2: Setup Development Environment
+Initialize your Next.js project.
+Set up your Supabase project.
+Install necessary libraries (React Query, Tailwind, charting libraries, Supabase client).
+Set up version control (e.g., Git, GitHub).
+
+
+Step 3: Authentication System Implementation
+Implement user authentication if CampaignIQ will have its own user logins.
+More importantly, implement OAuth 2.0 (with PKCE as per Q&A Section 6) for connecting to Google Ads, Meta, and TikTok. Store tokens securely, ideally using Supabase's capabilities and row-level security. This is a "Critical Path Element" (Section 8).
+Develop mechanisms for token refresh.
+
+
+Step 4: API Integrations (Core Focus)
+Start with Priority Platforms: Google and Meta (as they represent ~70% of Digital 101's data, Q&A Section 1).
+Develop API Modules/Adapters: Create separate modules for each platform. This aligns with your plan for an abstraction layer.
+Handle authentication for each.
+Implement functions to fetch the required metrics.
+Address platform-specific challenges:
+Google Ads: GAQL query builder (Q&A Section 5).
+Meta Graph API: Nested connections, pagination, fallback for unavailable metrics (Q&A Section 5).
+TikTok Ads API: Enhanced error handling, retry logic, conservative rate limiting (Q&A Section 5).
+Data Normalization: As you fetch data, transform it into your predefined unified data model. This is key for "consistent formats across all data sources" (Section 6). Store both raw and normalized data for verification if needed (Q&A Section 1).
+
+
+Step 5: Data Processing Logic
+Implement logic in your Next.js API routes to:
+Receive requests from the frontend.
+Call the appropriate API integration modules.
+Perform any necessary aggregations or calculations.
+Store and retrieve data from Supabase.
+Consider data aggregation strategies and time-based partitioning early on for performance.
+Step 6: Database Implementation
+Create the tables in Supabase according to your schema design.
+Implement functions/queries for CRUD (Create, Read, Update, Delete) operations on your data.
+Set up row-level security policies in Supabase (Q&A Section 6).
+Phase 3: Core Dashboard - Frontend Development
+Step 7: Build the Dashboard Interface
+Translate your UI mockups into React components using Next.js and Tailwind CSS.
+Create the main layout, navigation, and sections for displaying different data.
+Focus on an "intuitive interface for non-technical users" (Section 5).
+
+
+Step 8: Implement Basic Visualizations & Data Processing
+Use your chosen React-based charting library to display the normalized data fetched from your backend.
+Implement basic filtering and sorting options.
+
+
+Step 9: Connect Frontend to Backend APIs
+Use React Query to fetch data from your Next.js API routes.
+Manage loading states, error states, and data caching efficiently with React Query. This will also help with "optimistic UI updates" (Q&A Section 7).
+Ensure real-time (or near real-time as defined: "within 5 minutes") data updates. This might involve polling, or if Supabase real-time subscriptions are suitable, explore those. React Query can be configured for refetching intervals.
+
+
+Phase 4: Advanced Features
+Step 10: Cross-Platform Analysis
+Develop features that allow users to see aggregated data from multiple platforms in a single view.
+Implement "automated cross-platform analysis" capabilities mentioned in Section 5.
+Step 11: Custom Reporting
+Allow users to create and save custom report views or dashboards.
+This aligns with "dynamic, real-time client reports" (Section 4).
+Step 12: Proactive Alert System (if time permits within initial scope, or plan for future)
+Design a system to notify users of significant campaign performance changes based on predefined thresholds (Section 3 & 5). This might involve backend jobs checking data periodically.
+Phase 5: Testing & Refinement 
+This phase overlaps with advanced features and extends into deployment. (Timeline splits Testing & Optimization and Deployment & Documentation, but there's natural overlap).
+Step 13: Bug Fixing & Performance Enhancement
+Unit Testing: Test individual components and functions (both frontend and backend).
+Integration Testing: Test the interaction between frontend, backend, and external APIs.
+Address Technical Challenges (Section 5):
+"Integrating disparate API structures."
+"Normalizing varying metrics."
+"Creating meaningful visualizations from complex data sets."
+"Ensuring system performance with large datasets."
+
+
+Performance Testing (Q&A Section 7):
+Target: "<3 seconds for initial load, <1 second for updates."
+Use datasets representing Digital 101's projected maximum load (12 months of historical data, 25 client accounts).
+Optimize queries, implement pagination, client-side rendering optimizations (virtualized rendering), progressive loading, and caching.
+Batch API requests, parallel data fetching where possible.
+Data Accuracy Testing: Cross-verify dashboard metrics against platform-reported values (Target: 100% accuracy, Q&A Section 3).
+Step 14: Security Testing (Q&A Section 6)
+Conduct security-focused code reviews.
+Implement OWASP security best practices.
+Consider vulnerability scanning as part of a CI/CD pipeline.
+Verify data protection measures: OAuth 2.0 with PKCE, HTTPS/TLS 1.3, encrypted token storage, principle of least privilege, role-based access control (RBAC), audit logging, session management, data minimization, data isolation.
+Ensure compliance with relevant data protection regulations.
+Step 15: User Acceptance Testing (UAT)
+Have the Digital 101 marketing team use the system and provide feedback. This aligns with the Agile approach for "continuous feedback and refinement" (Section 6).
+Gather feedback on usability, functionality, and accuracy.
+Phase 6: Deployment & Documentation
+The timeline shows Deployment & Documentation for Weeks 17-20 and then another phase for Weeks 21-24 which also includes "Production release, training". I'll combine these.
+Step 16: Production Deployment
+Deploy your Next.js frontend and API routes to Vercel.
+Ensure your Supabase backend is configured for production (e.g., backups, appropriate instance size).
+Set up environment variables for production (API keys, database URLs).
+
+
+Step 17: Documentation (Q&A Section 8)
+Technical Documentation: System architecture, API integrations, data models, setup guides, enhancement procedures.
+User Guides/Tutorials: How to use CampaignIQ, its features, and interpret the data. Consider video tutorials.
+Codebase Wiki: Annotated code examples.
+Step 18: Training
+Conduct hands-on training sessions with Digital 101's technical staff and marketing team.
+
+Phase 7: Project Closure & Future
+Step 19: Final Report & Presentation
+Prepare your final year project report and presentation, summarizing the project, its outcomes, and learnings.
+Step 20: Post-Implementation Review & Handover (Q&A Section 8)
+Compare initial gap analysis with the delivered solution.
+Identify successes and areas for future enhancement.
+Implement ongoing support structures: automated monitoring for API health, diagnostic dashboard, issue reporting process.
+Plan for future-proofing: plugin architecture for new platforms, API versioning strategy, modular frontend.
+Discuss long-term vision: AI-powered analytics, scalability.
+Formal handover process with phased transition if applicable.
+Throughout the Project (Agile Principles & Best Practices):
+Agile Methodology (Section 6): Work in iterative cycles. Regularly get feedback from stakeholders (Digital 101) and refine.
+Risk Management (Q&A Section 2):
+API Changes: Implement versioned API adapters, monitor platform announcements.
+Data Volume: Use aggregation, partitioning, and performance test with large datasets.
+Authentication Complexity: Centralize with Supabase, use encrypted storage, auto-refresh.
+Scope Creep: Maintain a prioritized backlog, clear MVP definitions.
+Technical Debt: Adhere to SOLID principles, document, refactor regularly.
+Version Control: Use Git and commit frequently with meaningful messages.
+Communication: Maintain clear communication with any stakeholders (e.g., your project supervisor, Digital 101).
+Focus on Your Learning Objectives (Q&A Section 4): This project is a great opportunity to deepen your skills in web architecture, data integration, data visualization, and client-focused development.
+This A-Z guide should provide a solid framework. Remember that this is a complex project for a single developer within a 6-month timeline (as stated in Resource Feasibility, Section 7), so rigorous prioritization and efficient work are key. The document itself notes that you'll start with Google and Meta platforms, which is a smart approach to manage scope.
+
+

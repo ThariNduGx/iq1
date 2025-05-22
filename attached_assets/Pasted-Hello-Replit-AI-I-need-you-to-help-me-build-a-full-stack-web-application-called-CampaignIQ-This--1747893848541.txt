@@ -1,0 +1,226 @@
+Hello Replit AI. I need you to help me build a full-stack web application called "CampaignIQ". This application will serve as a comprehensive, real-time analytics dashboard for a digital0 hours of weekly manual data collection and reporting for Digital 101, while providing deeper campaign insights for faster optimization and improved ROI.
+
+**2. Core Problem & Objectives:**
+Digital 101 currently faces these pain points:
+*   **Manual Data Collection:** Spending 15-20 hours weekly on manual data collection, which is time-consuming and error-prone.
+*   **Reporting Issues:** Delayed reporting leads to missed optimization opportunities, inconsistent metrics across different platforms, and a lack of holistic views across campaigns.
+
+The key objectives for CampaignIQ are:
+*   **Streamline Data Collection:** Automate data fetching from Google Analytics, Google Ads, Facebook Ads, Instagram Ads, and TikTok Ads.
+*   **Create Dynamic Reports:** Provide real-time insights (data updated within 5 minutes).
+*   **Enable Cross-Platform Correlations:** Normalize metrics and analyze data across different platforms.
+*   **Ensure Scalability:** Build a system that can handle growing data and client needs.
+
+**3. Key Success Metrics for CampaignIQ:**
+*   80% marketing agency (Digital 101) and its users.
+
+**1. Project Understanding & Core Goal:**
+The primary goal of CampaignIQ is to "develop a comprehensive real-time analytics solution that eliminates manual reporting while providing deeper campaign insights."
+The core problem this project solves is the inefficient and manual nature of Digital 101's current analytics process, which involves:
+    *   Manual Data Collection: 15-20 hours weekly, prone to human error.
+    *    reduction in manual reporting time for Digital 101.
+*   15-20% ROI improvement for Digital 101's clients through faster optimization.
+*   Consistent, accurate metrics across all connected platforms.
+
+**4. Target Users & Authentication:**
+*   The primary users are the marketing team at Digital 101.
+*   Reporting Issues: Delayed reporting leading to missed optimization, inconsistent metrics, and lack of holistic campaign views.
+
+**2. Key Objectives & Expected Benefits:**
+The key objectives are:
+    *   Streamline data collection: Automate data fetching from Google Ads, Facebook Ads, Instagram Ads, and TikTok Ads.
+    *   Create dynamic reports: Provide real-**Crucial Requirement:** Users MUST log in to the CampaignIQ web application using their Google Accounts. Please implement this authenticationtime insights (data updated within 5 minutes).
+    *   Enable cross-platform correlations: Normalize and analyze data across different platforms.
+    *   Ensure scalability for growing data and client needs.
+Expected benefits include:
+    *.
+
+**5. Core Functionality - What CampaignIQ Should Do:**
+*   **Connect to Data Sources:** Securely connect   80% reduction in manual reporting time.
+    *   15-20% ROI improvement through faster optimization.
+    *   More accurate and consistent metrics.
+
+**3. Core Features to Implement:**
+    *   **User to user-authorized accounts for Google Analytics, Google Ads, Facebook Ads (including Instagram Ads via Meta's API), and Authentication:** Users must log in with their Google Account to access the dashboard.
+    *   **Ad Platform Connections:** After TikTok Ads. This will involve handling OAuth 2.0 flows for each platform.
+*   **Fetch Metrics:** Regularly fetch the specified key metrics (listed below) from these platforms.
+*   **Data Normalization:** Transform data from different platforms logging in, users must be able to securely connect their accounts for Google Ads, Facebook Ads (which includes Instagram Ads), and TikTok Ads into a unified data model for consistent reporting.
+*   **Data Storage:** Store the normalized (and potentially raw) using OAuth 2.0. API tokens for these connections must be securely stored (e.g., encrypted in Supabase data in a Supabase PostgreSQL database.
+*   **Unified Dashboard:** Display data from all connected platforms in a single) and associated with the logged-in user.
+    *   **Automated Data Collection:** Periodically fetch key, intuitive web interface.
+*   **Real-time Updates:** Ensure the dashboard data is refreshed to show insights within approximately  metrics from the connected ad platforms.
+    *   **Data Normalization:** Transform data from different platforms into a unified5 minutes of the data being available on the source platforms.
+*   **Cross-Platform Analysis:** Provide views that aggregate structure.
+    *   **Unified Dashboard:** Display key metrics from all connected platforms in a clean, intuitive interface.
+    * and compare data from multiple platforms.
+*   **Visualizations:** Present data using effective charts, graphs, and tables.
+   **Real-time/Near Real-time Updates:** Dashboard data should reflect updates within approximately 5 minutes.
+    *   *   **User Interface:** The UI should be intuitive for non-technical users, allowing them to filter, sort, and potentially drill**Basic Visualizations:** Use charts and graphs to represent the data effectively.
+
+**4. Technology Stack:**
+     down into data.
+
+**6. Technology Stack:**
+Please use the following technologies:
+*   **Frontend:** Next*   **Frontend:** Next.js, React, React Query (for data fetching and caching), Tailwind CSS (for styling).
+.js, React, React Query (for data fetching and state management), Tailwind CSS (for styling).
+*       *   **Backend:** Next.js API Routes.
+    *   **Database:** Supabase (for user**Backend:** Next.js API Routes (for handling API logic, data processing, and communication with external APIs/database data, normalized ad metrics, securely stored API tokens for platform connections).
+    *   **Authentication:** NextAuth.js ().
+*   **Database:** Supabase (PostgreSQL).
+*   **Authentication:** Google OAuth. Please use Supabase Auth or NextAuth.js integrated with Supabase for handling Google sign-in.
+*   **Deploymentfor Google Sign-In).
+    *   **Data Visualization:** A React-based charting library like Recharts, Environment (for project context):** Vercel (though we will develop and run it in Replit).
+
+**7. Chart.js, or Nivo (choose one and implement).
+
+**5. Architectural Guidelines (Based on prior discussion):**
+ Key Metrics to Track:**
+Please ensure the system can fetch, store, and display the following metrics:
+
+*   **Google Analytics    *   **API Integration Abstraction Layer:** Implement using an adapter pattern. Create:
+        *   `lib/api:** Page Views, Unique Visitors, Session Duration, Bounce Rate, Exit Rate, Pages per Session, Goal Completions, Conversion/interfaces.ts` (for defining common structures for API adapters).
+        *   `lib/api/adapters/ Rate, Traffic Sources, User Demographics, Mobile vs Desktop Usage, Page Load Time, Real-time Active Users.
+*   google-ads.ts` (and similarly for `meta-ads.ts`, `tiktok-ads.ts`). These**Google Search Console (if feasible as an extension later, main focus on Ads first):** Total Clicks, Total adapters will handle the specifics of each platform's API, including authentication and data fetching logic for the metrics listed below.
+     Impressions, Average CTR, Average Position.
+*   **Google Ads:** Impressions, Clicks, CTR, CPC, Cost,*   **Next.js API Routes:**
+        *   For authentication: `pages/api/auth/[...nextauth Conversions, Conversion Rate, ROAS, Quality Score, Search Impression Share, Average Position, Cost per Conversion.
+*].ts` (configure for Google Provider).
+        *   For data fetching: e.g., `pages/api/   **Facebook Ads & Instagram Ads (via Meta API):** Reach, Impressions, Frequency, CPM, CPC, CTR, Cost per Result, ROAS, Engagement Rate (Reactions, Comments, Shares), Video Views, Average Watch Time, Landingmetrics.ts` (to get combined/normalized data for the dashboard), and potentially platform-specific routes like `pages/api Page Views, Add to Cart Actions, Purchase Actions.
+*   **TikTok Ads:** Video Views, Watch Time, Completion/connect/google-ads.ts` (to handle OAuth callbacks and token storage for each platform).
+    *   **Sup Rate, Engagement Rate (Shares, Comments, Likes), Click-through Rate, Cost per View, Cost per Action, Conversionabase Data Model & Schema:**
+        *   Design and provide SQL DDL for (or describe in detail) the necessary Rate, ROAS, Audience Retention.
+*   **Cross-Platform Aggregations:** Total Spend Across Platforms, Overall Supabase tables:
+            *   `users`: To store user information from Google Sign-In (id, name, email ROAS, Cross-platform Attribution (simplified), Customer Journey Analysis (high-level), Cost per Acquisition (CPA), Campaign Performance Comparison.
+
+**8. Architectural Guidelines:**
+Please follow these architectural patterns:
+*   **API Integration Abstraction Layer:** Create, image). (Leverage NextAuth.js Supabase adapter if possible).
+            *   `accounts` (or `user a structured approach using adapter patterns for external API integrations. For example:
+    *   `lib/api/interfaces_platform_connections`): To store OAuth tokens (access token, refresh token, expiry) for each ad platform a.ts` (for defining common interfaces for platform data)
+    *   `lib/api/adapters/google-ads user connects. Ensure tokens are stored securely (e.g., leveraging Supabase's encryption capabilities or encrypting before.ts` (specific adapter for Google Ads)
+    *   `lib/api/adapters/meta-ads.ts insert) and are linked to the `users` table.
+            *   `normalized_metrics`: A table to store fetched` (for Facebook/Instagram)
+    *   `lib/api/adapters/tiktok-ads.ts`
+    *   This layer should handle authentication, data fetching, and basic transformation for each platform.
+*   **Next.js API Routes data in a unified format. Columns should include: `user_id` (foreign key to users), `platform:** Use these for backend logic. For example, `pages/api/metrics.ts` could handle requests from the frontend to fetch` (e.g., 'Google Ads', 'Facebook Ads'), `date`, `campaign_name`, `impressions`, `clicks`, `cost`, `conversions`, `roas`, and other common metrics from the list below. Add more specific metric data, which then calls the appropriate API adapter. Other routes will be needed for OAuth callbacks.
+*   **Supabase Data columns as needed.
+            *   Consider tables for `raw_platform_data` if intermediate storage is useful before normalization.
+ Model:** Design a Supabase PostgreSQL schema to store user information, connected accounts/tokens (securely!), and the normalized metrics.    *   **Frontend Data Fetching:**
+        *   Implement a hook like `lib/hooks/useMetrics. A starting point for schema definition could be conceptualized in a file like `lib/database/schema.sql` (though appliedts` that uses React Query to fetch data from your Next.js API routes for the dashboard.
+
+**6. via Supabase UI or migrations).
+*   **Frontend Data Fetching:** Use React Query hooks for fetching data from your Next.js API routes. For example, `lib/hooks/useMetrics.ts`.
+*   **Security:**
+     Key Metrics to Handle (prioritize these for initial implementation):**
+    *   **Google Ads:** Impressions, Clicks,*   All API keys, client secrets, and access tokens MUST be stored securely using Replit Secrets. Do not hardcode them CTR, Cost, Conversions, ROAS.
+    *   **Facebook & Instagram Ads (Meta Ads):** Reach.
+    *   Implement OAuth 2.0 with PKCE where possible and recommended by platforms.
+    *, Impressions, CTR, Cost, ROAS, Cost per Result.
+    *   **TikTok Ads:** Video Views, C   Manage token refresh mechanisms.
+*   **Error Handling & Rate Limiting:** Implement robust error handling and respect APIlicks, CTR, Cost, Conversions, ROAS.
+    The system should be designed to allow for the addition rate limits for all external platform integrations.
+
+**9. User Interface (UI) / User Experience (UX) Considerations:** of more metrics later from the comprehensive list previously discussed.
+
+**7. Development and Implementation Guidance:**
+    *   Initialize
+*   **Unified Dashboard:** A central place to view key metrics.
+*   **Intuitive Navigation:** Easy a Next.js project with TypeScript.
+    *   Set up Supabase and integrate the Supabase client.
+    *   Implement User Authentication (Google Sign-In using NextAuth.js and Supabase Adapter) as the first functional for users to find what they need.
+*   **Customizable Visualizations:** Use appropriate charts (bar, line, pie), and tables.
+*   **Filtering & Sorting:** Allow users to filter data by date range, campaign, platform, etc piece. Access to any dashboard pages should require login.
+    *   Next, implement the OAuth 2.0.
+
+**10. Development Process & Instructions for You (Replit AI):**
+I want you to guide flow for connecting to ONE platform (e.g., Google Ads). This includes:
+        *   A UI element ( me through building this project step-by-step within my Replit environment. Please:
+1.  Start by helpinge.g., a "Connect Google Ads" button).
+        *   API routes to handle the OAuth redirect and token exchange me set up the initial Next.js project structure with TypeScript.
+2.  **First Major Task: Implement Google Account.
+        *   Securely storing the tokens in Supabase, associated with the logged-in user.
+    *    Authentication.** Guide me to set this up using Supabase Auth (preferred, as we're using Supabase DB) or NextThen, develop the API adapter for that first platform (Google Ads) to fetch the key metrics listed above using the stored tokenAuth.js. Users should be able to sign in with Google, and their basic profile info should be stored in Supabase..
+    *   Create the Next.js API route to trigger this data fetching, normalize the data, and store it in
+3.  Next, help me design and create the necessary Supabase database tables for:
+    *   Users (already the `normalized_metrics` table in Supabase.
+    *   Build a basic dashboard page (e.g., partially handled by Supabase Auth).
+    *   Connected Accounts (to store platform-specific tokens and user identifiers securely, `pages/dashboard.js`) that is protected by authentication.
+    *   Use `lib/hooks/use associated with a CampaignIQ user).
+    *   Normalized Metrics Data (to store data fetched from platforms).
+4.Metrics.ts` and React Query to fetch and display the normalized data from Supabase for the logged-in user on  Then, let's develop the API abstraction layer and integration for **one platform first, for example, Google Ads this dashboard page using simple tables or basic charts.
+    *   Ensure all code is modular, well-commented, and follows.** This includes:
+    *   Setting up the OAuth 2.0 flow to allow users to connect their Google Ads best practices.
+    *   Generate the necessary files and folder structure as outlined.
+
+**8. Task Breakdown and account.
+    *   Securely storing the access and refresh tokens in Supabase, associated with the user.
+    *    Output:**
+Please proceed by:
+    1.  Outlining the primary folder structure and key files you will createCreating functions in the Google Ads adapter to fetch the key metrics listed above using the stored token.
+    *   Implementing token.
+    2.  Generating the code for user authentication (Google Sign-In with NextAuth.js and Supabase).
+ refresh logic.
+5.  Help me create Next.js API routes that the frontend can call. One route should    3.  Generating the Supabase schema (SQL DDL) for the tables described (users, accounts/user trigger the data fetching from the Google Ads adapter and then store/update the normalized data in Supabase.
+6.  After_platform_connections, normalized_metrics).
+    4.  Generating the code for the OAuth connection flow for Google that, guide me in building a basic frontend page (e.g., a `/dashboard` route protected by authentication) using Ads (frontend button, API routes for OAuth callback and token storage).
+    5.  Generating the API adapter for Google Ads (`lib/api/adapters/google-ads.ts`) and the API route to fetch, normalize, and store Next.js and React. This page should use React Query (`useMetrics` hook) to call our Next.js API route Google Ads data.
+    6.  Generating a basic authenticated dashboard page that displays some of the fetched Google Ads data and display some of the fetched Google Ads data, perhaps in a simple table or with a basic chart (e.g., using the `useMetrics` hook.
+
+Explain the key parts of the code as you generate them. I understand this is a large using Chart.js or Recharts – help me install and set up a chosen library).
+7.  Once this project, so focus on getting these foundational elements correctly implemented first. We can iterate and add other platforms and features later.
+ end-to-end flow for one platform is working (Auth -> Connect Platform -> Fetch Data -> Store Data -> Display Data),```
+
+**Important Considerations for You:**
+
+*   **Replit AI's Capabilities:** While Replit AI is powerful we will iteratively:
+    *   Add integrations for other platforms (Facebook/Instagram, TikTok, Google Analytics) following the same pattern, building a "full project" of this complexity in one go is a huge ask. It will likely generate code in chunks.
+    *   Build out the unified dashboard UI with more advanced visualizations and filtering.
+    *   Implement the data normalization logic more thoroughly.
+    *   Set up periodic/scheduled data fetching (e.g., to achieve or might need further prompting for specific parts. Be prepared to guide it, ask for refinements, and debug the generated code.
+ the "within 5 minutes" goal, perhaps using background jobs or frequent refetching strategies).
+8.  *   **Iterative Process:** Treat this as the *start* of the development. The AI's output will be a strong foundation, but you'll need to test, debug, and expand upon it.
+*   **APIThroughout this process:
+    *   Provide clear explanations for the code and concepts.
+    *   Help me debug Keys and Secrets:** The AI cannot handle real API keys for Google Ads, etc. You will need to obtain these yourself from any issues we encounter.
+    *   Focus on creating modular, maintainable, and understandable code.
+    *   Rem the respective platforms and configure them securely in Replit's Secrets manager once the AI has set up the structure for environmentind me to use Replit Secrets for all sensitive credentials.
+    *   Suggest best practices for Next.js, Supabase, React Query, and API integrations.
+
+**11. Output Format Expectation:**
+*   For each variables. The AI can create placeholders for these.
+*   **OAuth Complexity:** OAuth setup can be tricky with exact step, tell me which files to create or modify.
+*   Provide the complete code snippets to be added to these files.
+ redirect URIs and client configurations on the ad platforms. The AI can generate the code flow, but you'll need to do*   If there are commands to run (e.g., `npm install`), please provide them.
+
+Let's start with the actual configuration on Google Cloud Console, Meta for Developers, and TikTok for Developers.
+*   **"Running Locally": step 1: Setting up the Next.js project with TypeScript and then move to step 2: Google Account Authentication** In Replit, "running locally" means running within the Replit environment, accessible via a public Replit URL. This. I'm ready to begin when you are.
+
+---
+
+Project Name: campaigniq
+ID: dxqxirfpfefntmeoahre
+Superbase Password: 5*6wVrNaN#q.ypu
+Supabase DB Password: 5*6wVrNaN#q.ypu
+
+project url: https://dxqxirfpfefntmeoahre.supabase.co
+anon public key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4cXhpcmZwZmVmbnRtZW9haHJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcwMjc3MTYsImV4cCI6MjA2MjYwMzcxNn0.1SVKHCZVBCh8M6uuGJOKsMqLD3Zk1bm69zF2qTMy7gU
+
+Client Id: 514720028776-8mn40cfuho04o7ui00oj6tcns73orq72.apps.googleusercontent.com
+Client Secret: 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
+
+TOKEN_ENCRYPTION_KEY=319daab5a87627f9730668f22932cbfe2d514353867c031944c4256228a176a1
+
+
+
+npx supabase gen types typescript --project-id dxqxirfpfefntmeoahre --schema public > src/lib/supabase/database.types.ts
+
+
+
+$dbPassword = ""
+export PGPASSWORD='5*6wVrNaN#q.ypu'
+
+SUPABASE_DB_PASSWORD=5*6wVrNaN#q.ypu npx supabase link --project-ref dxqxirfpfefntmeoahre
+
+
+use shadcn for UI and these are the credentials you need, i have configured access to google console on my oauth as well. use recommoneded tech stack with nextjs and supabase
