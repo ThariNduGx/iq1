@@ -1,4 +1,2 @@
-import { SupabaseStorage } from './storage';
-
-// Create and export the storage instance
-export const storage = new SupabaseStorage();
+import { storage } from "./database-storage";
+export { storage };

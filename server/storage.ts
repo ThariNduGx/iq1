@@ -13,27 +13,20 @@ import {
   type PerformanceTimeseriesPoint
 } from "@shared/schema";
 import { IStorage } from "./storage-interface";
-import { supabase, supabaseAdmin } from "./supabase-db";
+import { db } from "./db";
+import { users, platformConnections, campaignMetrics } from "@shared/schema";
+import { eq, and, gte, lte, desc, asc, sql } from "drizzle-orm";
 
-export class SupabaseStorage implements IStorage {
+export class DatabaseStorage implements IStorage {
   // User operations
   async getUser(id: number): Promise<User | undefined> {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', id)
-      .single();
-      
-    if (error || !data) return undefined;
-    
-    return {
-      id: data.id,
-      googleId: data.google_id,
-      email: data.email,
-      name: data.name,
-      avatarUrl: data.avatar_url,
-      createdAt: new Date(data.created_at)
-    };
+    try {
+      const [user] = await db.select().from(users).where(eq(users.id, id));
+      return user || undefined;
+    } catch (error) {
+      console.error("Error getting user:", error);
+      return undefined;
+    }
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
