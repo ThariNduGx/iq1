@@ -13,7 +13,7 @@ import {
   type PerformanceTimeseriesPoint
 } from "@shared/schema";
 import { IStorage } from "./storage-interface";
-import { supabase } from "./supabase-db";
+import { supabase, supabaseAdmin } from "./supabase-db";
 
 export class SupabaseStorage implements IStorage {
   // User operations
@@ -77,7 +77,7 @@ export class SupabaseStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     console.log("Attempting to create user with data:", insertUser);
     
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('users')
       .insert({
         google_id: insertUser.googleId,
