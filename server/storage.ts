@@ -1,7 +1,4 @@
 import { 
-  users, 
-  platformConnections, 
-  campaignMetrics, 
   type User, 
   type InsertUser, 
   type PlatformConnection, 
@@ -15,97 +12,145 @@ import {
   type MetricInsight,
   type PerformanceTimeseriesPoint
 } from "@shared/schema";
-import { db } from "./db";
-import { and, eq, gte, lte, desc, sql, count, sum, avg } from "drizzle-orm";
+import { IStorage } from "./storage-interface";
+import { supabase } from "./supabase-db";
 
-export interface IStorage {
-  // User operations
-  getUser(id: number): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  getUserByGoogleId(googleId: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
-  
-  // Platform connection operations
-  getPlatformConnectionsByUserId(userId: number): Promise<PlatformConnection[]>;
-  getPlatformConnection(userId: number, platform: string): Promise<PlatformConnection | undefined>;
-  savePlatformConnection(connection: InsertPlatformConnection): Promise<PlatformConnection>;
-  deletePlatformConnection(userId: number, platform: string): Promise<void>;
-  
-  // Campaign metrics operations
-  saveCampaignMetrics(metrics: InsertCampaignMetric[]): Promise<void>;
-  getCampaignMetrics(userId: number, startDate: Date, endDate: Date, platform?: string): Promise<CampaignMetric[]>;
-  
-  // Analytics operations
-  getMetricsSummary(userId: number, startDate: Date, endDate: Date, platform?: string): Promise<MetricSummary>;
-  getPlatformPerformance(userId: number, startDate: Date, endDate: Date): Promise<PlatformPerformance[]>;
-  getSpendDistribution(userId: number, startDate: Date, endDate: Date): Promise<SpendDistribution[]>;
-  getTopCampaigns(userId: number, startDate: Date, endDate: Date, limit: number, platform?: string): Promise<TopCampaign[]>;
-  getPerformanceTimeseries(userId: number, startDate: Date, endDate: Date, metric: string, platform?: string): Promise<PerformanceTimeseriesPoint[]>;
-  getMetricInsights(userId: number): Promise<MetricInsight[]>;
-}
-
-// Database storage implementation
-export class DatabaseStorage implements IStorage {
+export class SupabaseStorage implements IStorage {
   // User operations
   async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, id));
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', id)
+      .single();
       
-    return user;
+    if (error || !data) return undefined;
+    
+    return {
+      id: data.id,
+      googleId: data.google_id,
+      email: data.email,
+      name: data.name,
+      avatarUrl: data.avatar_url,
+      createdAt: new Date(data.created_at)
+    };
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, username));
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', username)
+      .single();
       
-    return user;
+    if (error || !data) return undefined;
+    
+    return {
+      id: data.id,
+      googleId: data.google_id,
+      email: data.email,
+      name: data.name,
+      avatarUrl: data.avatar_url,
+      createdAt: new Date(data.created_at)
+    };
   }
   
   async getUserByGoogleId(googleId: string): Promise<User | undefined> {
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.googleId, googleId));
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('google_id', googleId)
+      .single();
       
-    return user;
+    if (error || !data) return undefined;
+    
+    return {
+      id: data.id,
+      googleId: data.google_id,
+      email: data.email,
+      name: data.name,
+      avatarUrl: data.avatar_url,
+      createdAt: new Date(data.created_at)
+    };
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values({
-        ...insertUser,
-        avatarUrl: insertUser.avatarUrl || null
+    const { data, error } = await supabase
+      .from('users')
+      .insert({
+        google_id: insertUser.googleId,
+        email: insertUser.email,
+        name: insertUser.name,
+        avatar_url: insertUser.avatarUrl || null
       })
-      .returning();
+      .select()
+      .single();
       
-    return user;
+    if (error) {
+      console.error("Error creating user:", error);
+      throw error;
+    }
+    
+    return {
+      id: data.id,
+      googleId: data.google_id,
+      email: data.email,
+      name: data.name,
+      avatarUrl: data.avatar_url,
+      createdAt: new Date(data.created_at)
+    };
   }
   
   // Platform connection operations
   async getPlatformConnectionsByUserId(userId: number): Promise<PlatformConnection[]> {
-    return await db
-      .select()
-      .from(platformConnections)
-      .where(eq(platformConnections.userId, userId));
+    const { data, error } = await supabase
+      .from('platform_connections')
+      .select('*')
+      .eq('user_id', userId);
+      
+    if (error) {
+      console.error("Error getting platform connections:", error);
+      return [];
+    }
+    
+    return data.map(conn => ({
+      id: conn.id,
+      userId: conn.user_id,
+      platform: conn.platform,
+      accessToken: conn.access_token,
+      refreshToken: conn.refresh_token,
+      expiresAt: conn.expires_at ? new Date(conn.expires_at) : null,
+      accountId: conn.account_id,
+      accountName: conn.account_name,
+      metadata: conn.metadata,
+      createdAt: new Date(conn.created_at),
+      updatedAt: new Date(conn.updated_at)
+    }));
   }
   
   async getPlatformConnection(userId: number, platform: string): Promise<PlatformConnection | undefined> {
-    const [connection] = await db
-      .select()
-      .from(platformConnections)
-      .where(
-        and(
-          eq(platformConnections.userId, userId),
-          eq(platformConnections.platform, platform)
-        )
-      );
+    const { data, error } = await supabase
+      .from('platform_connections')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('platform', platform)
+      .single();
       
-    return connection;
+    if (error || !data) return undefined;
+    
+    return {
+      id: data.id,
+      userId: data.user_id,
+      platform: data.platform,
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token,
+      expiresAt: data.expires_at ? new Date(data.expires_at) : null,
+      accountId: data.account_id,
+      accountName: data.account_name,
+      metadata: data.metadata,
+      createdAt: new Date(data.created_at),
+      updatedAt: new Date(data.updated_at)
+    };
   }
   
   async savePlatformConnection(connection: InsertPlatformConnection): Promise<PlatformConnection> {
@@ -114,69 +159,120 @@ export class DatabaseStorage implements IStorage {
     
     if (existingConn) {
       // Update existing connection
-      const [updatedConnection] = await db
-        .update(platformConnections)
-        .set({
-          ...connection,
-          updatedAt: new Date(),
-          refreshToken: connection.refreshToken ?? existingConn.refreshToken,
-          expiresAt: connection.expiresAt ?? existingConn.expiresAt,
-          accountId: connection.accountId ?? existingConn.accountId,
-          accountName: connection.accountName ?? existingConn.accountName,
-          metadata: connection.metadata ?? existingConn.metadata
+      const { data, error } = await supabase
+        .from('platform_connections')
+        .update({
+          access_token: connection.accessToken,
+          refresh_token: connection.refreshToken ?? existingConn.refreshToken,
+          expires_at: connection.expiresAt ?? existingConn.expiresAt,
+          account_id: connection.accountId ?? existingConn.accountId,
+          account_name: connection.accountName ?? existingConn.accountName,
+          metadata: connection.metadata ?? existingConn.metadata,
+          updated_at: new Date().toISOString()
         })
-        .where(eq(platformConnections.id, existingConn.id))
-        .returning();
+        .eq('id', existingConn.id)
+        .select()
+        .single();
         
-      return updatedConnection;
+      if (error) {
+        console.error("Error updating platform connection:", error);
+        throw error;
+      }
+      
+      return {
+        id: data.id,
+        userId: data.user_id,
+        platform: data.platform,
+        accessToken: data.access_token,
+        refreshToken: data.refresh_token,
+        expiresAt: data.expires_at ? new Date(data.expires_at) : null,
+        accountId: data.account_id,
+        accountName: data.account_name,
+        metadata: data.metadata,
+        createdAt: new Date(data.created_at),
+        updatedAt: new Date(data.updated_at)
+      };
     } else {
       // Create new connection
-      const [newConnection] = await db
-        .insert(platformConnections)
-        .values({
-          ...connection,
-          refreshToken: connection.refreshToken ?? null,
-          expiresAt: connection.expiresAt ?? null,
-          accountId: connection.accountId ?? null,
-          accountName: connection.accountName ?? null,
+      const { data, error } = await supabase
+        .from('platform_connections')
+        .insert({
+          user_id: connection.userId,
+          platform: connection.platform,
+          access_token: connection.accessToken,
+          refresh_token: connection.refreshToken ?? null,
+          expires_at: connection.expiresAt ?? null,
+          account_id: connection.accountId ?? null,
+          account_name: connection.accountName ?? null,
           metadata: connection.metadata ?? {}
         })
-        .returning();
+        .select()
+        .single();
         
-      return newConnection;
+      if (error) {
+        console.error("Error creating platform connection:", error);
+        throw error;
+      }
+      
+      return {
+        id: data.id,
+        userId: data.user_id,
+        platform: data.platform,
+        accessToken: data.access_token,
+        refreshToken: data.refresh_token,
+        expiresAt: data.expires_at ? new Date(data.expires_at) : null,
+        accountId: data.account_id,
+        accountName: data.account_name,
+        metadata: data.metadata,
+        createdAt: new Date(data.created_at),
+        updatedAt: new Date(data.updated_at)
+      };
     }
   }
   
   async deletePlatformConnection(userId: number, platform: string): Promise<void> {
-    await db
-      .delete(platformConnections)
-      .where(
-        and(
-          eq(platformConnections.userId, userId),
-          eq(platformConnections.platform, platform)
-        )
-      );
+    const { error } = await supabase
+      .from('platform_connections')
+      .delete()
+      .eq('user_id', userId)
+      .eq('platform', platform);
+      
+    if (error) {
+      console.error("Error deleting platform connection:", error);
+      throw error;
+    }
   }
   
   // Campaign metrics operations
   async saveCampaignMetrics(metrics: InsertCampaignMetric[]): Promise<void> {
     if (metrics.length === 0) return;
     
-    const metricsWithDefaults = metrics.map(metric => ({
-      ...metric,
-      platformConnectionId: metric.platformConnectionId ?? null,
+    const supabaseMetrics = metrics.map(metric => ({
+      user_id: metric.userId,
+      platform: metric.platform,
+      platform_connection_id: metric.platformConnectionId ?? null,
+      campaign_id: metric.campaignId,
+      campaign_name: metric.campaignName,
+      date: metric.date.toISOString(),
       spend: metric.spend ?? null,
       impressions: metric.impressions ?? null,
       clicks: metric.clicks ?? null,
       conversions: metric.conversions ?? null,
-      costPerConversion: metric.costPerConversion ?? null,
-      conversionRate: metric.conversionRate ?? null,
+      cost_per_conversion: metric.costPerConversion ?? null,
+      conversion_rate: metric.conversionRate ?? null,
       ctr: metric.ctr ?? null,
       cpc: metric.cpc ?? null,
       roas: metric.roas ?? null
     }));
     
-    await db.insert(campaignMetrics).values(metricsWithDefaults);
+    const { error } = await supabase
+      .from('campaign_metrics')
+      .insert(supabaseMetrics);
+      
+    if (error) {
+      console.error("Error saving campaign metrics:", error);
+      throw error;
+    }
   }
   
   async getCampaignMetrics(
@@ -185,19 +281,43 @@ export class DatabaseStorage implements IStorage {
     endDate: Date, 
     platform?: string
   ): Promise<CampaignMetric[]> {
-    const query = db
-      .select()
-      .from(campaignMetrics)
-      .where(
-        and(
-          eq(campaignMetrics.userId, userId),
-          gte(campaignMetrics.date, startDate),
-          lte(campaignMetrics.date, endDate),
-          platform ? eq(campaignMetrics.platform, platform) : undefined
-        )
-      );
+    let query = supabase
+      .from('campaign_metrics')
+      .select('*')
+      .eq('user_id', userId)
+      .gte('date', startDate.toISOString())
+      .lte('date', endDate.toISOString());
       
-    return await query;
+    if (platform) {
+      query = query.eq('platform', platform);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) {
+      console.error("Error getting campaign metrics:", error);
+      return [];
+    }
+    
+    return data.map(metric => ({
+      id: metric.id,
+      userId: metric.user_id,
+      platform: metric.platform,
+      platformConnectionId: metric.platform_connection_id,
+      campaignId: metric.campaign_id,
+      campaignName: metric.campaign_name,
+      date: new Date(metric.date),
+      spend: metric.spend,
+      impressions: metric.impressions,
+      clicks: metric.clicks,
+      conversions: metric.conversions,
+      costPerConversion: metric.cost_per_conversion,
+      conversionRate: metric.conversion_rate,
+      ctr: metric.ctr,
+      cpc: metric.cpc,
+      roas: metric.roas,
+      createdAt: new Date(metric.created_at)
+    }));
   }
   
   // Analytics operations
@@ -334,20 +454,29 @@ export class DatabaseStorage implements IStorage {
       }
     }
     
-    // Add TikTok as not connected for demo
-    if (!result.some(r => r.platform === 'tiktok_ads') && connections.length === 0) {
-      result.push({
-        platform: 'tiktok_ads',
-        spend: 0,
-        impressions: 0,
-        clicks: 0,
-        conversions: 0,
-        ctr: 0,
-        cpc: 0,
-        costPerConversion: 0,
-        roas: 0,
-        isConnected: false
-      });
+    // Check if we have any platforms yet (new account)
+    if (result.length === 0) {
+      // Add sample platforms for a better first-time experience
+      const samplePlatforms = [
+        { platform: 'google_ads', isConnected: false },
+        { platform: 'facebook_ads', isConnected: false },
+        { platform: 'tiktok_ads', isConnected: false }
+      ];
+      
+      for (const sample of samplePlatforms) {
+        result.push({
+          platform: sample.platform,
+          spend: 0,
+          impressions: 0,
+          clicks: 0,
+          conversions: 0,
+          ctr: 0,
+          cpc: 0,
+          costPerConversion: 0,
+          roas: 0,
+          isConnected: sample.isConnected
+        });
+      }
     }
     
     return result;
@@ -419,11 +548,11 @@ export class DatabaseStorage implements IStorage {
       .sort((a, b) => b.roas - a.roas)
       .slice(0, limit);
     
-    // If we don't have enough campaigns, add some sample data for demo
+    // If we don't have enough campaigns, add some sample data for first-time users
     if (campaigns.length < limit) {
       const sampleCampaigns: TopCampaign[] = [
         {
-          campaignName: 'Summer Collection 2023',
+          campaignName: 'Summer Collection 2025',
           platform: 'google_ads',
           spend: 4321.56,
           conversions: 325,
@@ -459,9 +588,11 @@ export class DatabaseStorage implements IStorage {
         }
       ];
       
-      // Add sample campaigns until we reach the limit
-      for (let i = 0; i < Math.min(sampleCampaigns.length, limit - campaigns.length); i++) {
-        campaigns.push(sampleCampaigns[i]);
+      // Add sample campaigns until we reach the limit, but only if we're a new account with no data
+      if (campaigns.length === 0) {
+        for (let i = 0; i < Math.min(sampleCampaigns.length, limit); i++) {
+          campaigns.push(sampleCampaigns[i]);
+        }
       }
     }
     
@@ -499,63 +630,105 @@ export class DatabaseStorage implements IStorage {
     }
     
     // Aggregate metrics by date
-    for (const metric of metrics) {
-      const dateStr = new Date(metric.date).toISOString().split('T')[0];
+    for (const m of metrics) {
+      const dateStr = new Date(m.date).toISOString().split('T')[0];
       const entry = dateMap.get(dateStr);
       
       if (entry) {
         // Add platform-specific value
-        const platformKey = metric.platform;
-        entry[platformKey] = (entry[platformKey] || 0) + getMetricValue(metric, metric);
+        const platformKey = m.platform;
+        let value = 0;
+        
+        switch (metric) {
+          case 'spend':
+            value = m.spend || 0;
+            break;
+          case 'impressions':
+            value = m.impressions || 0;
+            break;
+          case 'clicks':
+            value = m.clicks || 0;
+            break;
+          case 'conversions':
+            value = m.conversions || 0;
+            break;
+          case 'ctr':
+            value = m.ctr || 0;
+            break;
+          case 'cpc':
+            value = m.cpc || 0;
+            break;
+          case 'roas':
+            value = m.roas || 0;
+            break;
+          default:
+            value = 0;
+        }
+        
+        entry[platformKey] = (entry[platformKey] || 0) + value;
         
         // Update total
-        entry.total += getMetricValue(metric, metric);
+        entry.total += value;
       }
     }
     
     // Convert to array of data points
     const result: PerformanceTimeseriesPoint[] = [];
     
-    for (const [date, values] of dateMap.entries()) {
+    dateMap.forEach((values, date) => {
       if (platform) {
         // If platform is specified, return platform-specific data points
-        result.push({
-          date,
-          [metric]: values[platform] || 0
-        });
+        const point: PerformanceTimeseriesPoint = {
+          date
+        };
+        
+        // Add the metric data using proper typing
+        if (metric === 'spend') point.spend = values[platform] || 0;
+        if (metric === 'roas') point.roas = values[platform] || 0;
+        if (metric === 'conversions') point.conversions = values[platform] || 0;
+        if (metric === 'ctr') point.ctr = values[platform] || 0;
+        
+        result.push(point);
       } else {
         // Otherwise, return total
-        result.push({
-          date,
-          [metric]: values.total
-        });
+        const point: PerformanceTimeseriesPoint = {
+          date
+        };
+        
+        // Add the metric data using proper typing
+        if (metric === 'spend') point.spend = values.total;
+        if (metric === 'roas') point.roas = values.total;
+        if (metric === 'conversions') point.conversions = values.total;
+        if (metric === 'ctr') point.ctr = values.total;
+        
+        result.push(point);
       }
-    }
+    });
     
-    // If we have no data, provide some sample data for demo
-    if (result.every(point => point[metric] === 0)) {
-      // Generate random values
+    // If we have no data, provide some sample data for first-time users
+    if (metrics.length === 0) {
+      // Generate random values for empty datasets
       for (let i = 0; i < result.length; i++) {
         let value;
         
         switch (metric) {
           case 'spend':
             value = Math.random() * 500 + 500; // 500-1000
+            result[i].spend = value;
             break;
           case 'roas':
             value = Math.random() * 3 + 1; // 1-4
+            result[i].roas = value;
             break;
           case 'conversions':
             value = Math.floor(Math.random() * 40 + 10); // 10-50
+            result[i].conversions = value;
             break;
           case 'ctr':
             value = Math.random() * 0.05 + 0.01; // 1%-6%
+            result[i].ctr = value;
             break;
-          default:
-            value = 0;
         }
-        
-        result[i][metric] = value;
       }
     }
     
@@ -563,57 +736,38 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getMetricInsights(userId: number): Promise<MetricInsight[]> {
-    // For now, return some sample insights
-    // In a real implementation, we would analyze the metrics and generate insights
-    return [
-      {
-        type: 'improvement',
-        title: 'Performance Improvement',
-        message: 'Facebook ROAS increased by 24% in the last 7 days compared to the previous period.',
-        timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString() // 10 minutes ago
-      },
-      {
-        type: 'warning',
-        title: 'Budget Warning',
-        message: 'Google Ads "Summer Collection" campaign has spent 85% of its budget with 10 days remaining.',
-        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() // 2 hours ago
-      },
-      {
-        type: 'alert',
-        title: 'Conversion Drop',
-        message: 'Instagram "Product Showcase" campaign conversions dropped by 32% in the last 3 days.',
-        timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() // 1 day ago
-      },
-      {
-        type: 'recommendation',
-        title: 'Recommendation',
-        message: 'Consider reallocating budget from "Brand Awareness" to "New Product Launch" for better ROAS.',
-        timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() // 2 days ago
-      }
-    ];
+    const { data, error } = await supabase
+      .from('metric_insights')
+      .select('*')
+      .eq('user_id', userId)
+      .order('timestamp', { ascending: false })
+      .limit(5);
+      
+    if (error || !data || data.length === 0) {
+      // Provide sample insights for new users
+      return [
+        {
+          type: 'improvement',
+          title: 'Welcome to CampaignIQ',
+          message: 'Connect your ad platforms to see personalized insights and performance metrics.',
+          timestamp: new Date().toISOString()
+        },
+        {
+          type: 'recommendation',
+          title: 'Getting Started',
+          message: 'Start by connecting your Google, Facebook or TikTok ad accounts to see your campaign performance.',
+          timestamp: new Date(Date.now() - 3 * 60 * 1000).toISOString() // 3 minutes ago
+        }
+      ];
+    }
+    
+    return data.map(insight => ({
+      type: insight.type as 'improvement' | 'warning' | 'alert' | 'recommendation',
+      title: insight.title,
+      message: insight.message,
+      timestamp: insight.timestamp
+    }));
   }
 }
 
-// Helper function to get metric value
-function getMetricValue(metric: CampaignMetric, metricType: string): number {
-  switch (metricType) {
-    case 'spend':
-      return metric.spend || 0;
-    case 'impressions':
-      return metric.impressions || 0;
-    case 'clicks':
-      return metric.clicks || 0;
-    case 'conversions':
-      return metric.conversions || 0;
-    case 'ctr':
-      return metric.ctr || 0;
-    case 'cpc':
-      return metric.cpc || 0;
-    case 'roas':
-      return metric.roas || 0;
-    default:
-      return 0;
-  }
-}
-
-export const storage = new DatabaseStorage();
+export const storage = new SupabaseStorage();
