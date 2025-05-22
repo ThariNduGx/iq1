@@ -15,6 +15,8 @@ import {
   type MetricInsight,
   type PerformanceTimeseriesPoint
 } from "@shared/schema";
+import { db } from "./db";
+import { and, eq, gte, lte, desc, sql, count, sum, avg } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -42,95 +44,68 @@ export interface IStorage {
   getMetricInsights(userId: number): Promise<MetricInsight[]>;
 }
 
-// In-memory storage implementation for development
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private platformConnections: Map<number, PlatformConnection>;
-  private campaignMetrics: CampaignMetric[];
-  private currentUserId: number;
-  private currentConnectionId: number;
-  private currentMetricId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.platformConnections = new Map();
-    this.campaignMetrics = [];
-    this.currentUserId = 1;
-    this.currentConnectionId = 1;
-    this.currentMetricId = 1;
-    
-    // Add some sample insights for demo purposes
-    this.sampleInsights = [
-      {
-        type: 'improvement',
-        title: 'Performance Improvement',
-        message: 'Facebook ROAS increased by 24% in the last 7 days compared to the previous period.',
-        timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString() // 10 minutes ago
-      },
-      {
-        type: 'warning',
-        title: 'Budget Warning',
-        message: 'Google Ads "Summer Collection" campaign has spent 85% of its budget with 10 days remaining.',
-        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() // 2 hours ago
-      },
-      {
-        type: 'alert',
-        title: 'Conversion Drop',
-        message: 'Instagram "Product Showcase" campaign conversions dropped by 32% in the last 3 days.',
-        timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() // 1 day ago
-      },
-      {
-        type: 'recommendation',
-        title: 'Recommendation',
-        message: 'Consider reallocating budget from "Brand Awareness" to "New Product Launch" for better ROAS.',
-        timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() // 2 days ago
-      }
-    ];
-  }
-
-  // Sample insights for development
-  private sampleInsights: MetricInsight[];
-
+// Database storage implementation
+export class DatabaseStorage implements IStorage {
   // User operations
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, id));
+      
+    return user;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.email === username
-    );
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, username));
+      
+    return user;
   }
   
   async getUserByGoogleId(googleId: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.googleId === googleId
-    );
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.googleId, googleId));
+      
+    return user;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { 
-      ...insertUser, 
-      id, 
-      createdAt: new Date(),
-      avatarUrl: insertUser.avatarUrl || null
-    };
-    this.users.set(id, user);
+    const [user] = await db
+      .insert(users)
+      .values({
+        ...insertUser,
+        avatarUrl: insertUser.avatarUrl || null
+      })
+      .returning();
+      
     return user;
   }
   
   // Platform connection operations
   async getPlatformConnectionsByUserId(userId: number): Promise<PlatformConnection[]> {
-    return Array.from(this.platformConnections.values()).filter(
-      conn => conn.userId === userId
-    );
+    return await db
+      .select()
+      .from(platformConnections)
+      .where(eq(platformConnections.userId, userId));
   }
   
   async getPlatformConnection(userId: number, platform: string): Promise<PlatformConnection | undefined> {
-    return Array.from(this.platformConnections.values()).find(
-      conn => conn.userId === userId && conn.platform === platform
-    );
+    const [connection] = await db
+      .select()
+      .from(platformConnections)
+      .where(
+        and(
+          eq(platformConnections.userId, userId),
+          eq(platformConnections.platform, platform)
+        )
+      );
+      
+    return connection;
   }
   
   async savePlatformConnection(connection: InsertPlatformConnection): Promise<PlatformConnection> {
@@ -139,44 +114,69 @@ export class MemStorage implements IStorage {
     
     if (existingConn) {
       // Update existing connection
-      const updatedConnection: PlatformConnection = {
-        ...existingConn,
-        ...connection,
-        updatedAt: new Date()
-      };
-      this.platformConnections.set(existingConn.id, updatedConnection);
+      const [updatedConnection] = await db
+        .update(platformConnections)
+        .set({
+          ...connection,
+          updatedAt: new Date(),
+          refreshToken: connection.refreshToken ?? existingConn.refreshToken,
+          expiresAt: connection.expiresAt ?? existingConn.expiresAt,
+          accountId: connection.accountId ?? existingConn.accountId,
+          accountName: connection.accountName ?? existingConn.accountName,
+          metadata: connection.metadata ?? existingConn.metadata
+        })
+        .where(eq(platformConnections.id, existingConn.id))
+        .returning();
+        
       return updatedConnection;
     } else {
       // Create new connection
-      const id = this.currentConnectionId++;
-      const newConnection: PlatformConnection = {
-        ...connection,
-        id,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      this.platformConnections.set(id, newConnection);
+      const [newConnection] = await db
+        .insert(platformConnections)
+        .values({
+          ...connection,
+          refreshToken: connection.refreshToken ?? null,
+          expiresAt: connection.expiresAt ?? null,
+          accountId: connection.accountId ?? null,
+          accountName: connection.accountName ?? null,
+          metadata: connection.metadata ?? {}
+        })
+        .returning();
+        
       return newConnection;
     }
   }
   
   async deletePlatformConnection(userId: number, platform: string): Promise<void> {
-    const connection = await this.getPlatformConnection(userId, platform);
-    if (connection) {
-      this.platformConnections.delete(connection.id);
-    }
+    await db
+      .delete(platformConnections)
+      .where(
+        and(
+          eq(platformConnections.userId, userId),
+          eq(platformConnections.platform, platform)
+        )
+      );
   }
   
   // Campaign metrics operations
   async saveCampaignMetrics(metrics: InsertCampaignMetric[]): Promise<void> {
-    for (const metric of metrics) {
-      const id = this.currentMetricId++;
-      this.campaignMetrics.push({
-        ...metric,
-        id,
-        createdAt: new Date()
-      });
-    }
+    if (metrics.length === 0) return;
+    
+    const metricsWithDefaults = metrics.map(metric => ({
+      ...metric,
+      platformConnectionId: metric.platformConnectionId ?? null,
+      spend: metric.spend ?? null,
+      impressions: metric.impressions ?? null,
+      clicks: metric.clicks ?? null,
+      conversions: metric.conversions ?? null,
+      costPerConversion: metric.costPerConversion ?? null,
+      conversionRate: metric.conversionRate ?? null,
+      ctr: metric.ctr ?? null,
+      cpc: metric.cpc ?? null,
+      roas: metric.roas ?? null
+    }));
+    
+    await db.insert(campaignMetrics).values(metricsWithDefaults);
   }
   
   async getCampaignMetrics(
@@ -185,12 +185,19 @@ export class MemStorage implements IStorage {
     endDate: Date, 
     platform?: string
   ): Promise<CampaignMetric[]> {
-    return this.campaignMetrics.filter(metric => 
-      metric.userId === userId &&
-      new Date(metric.date) >= startDate &&
-      new Date(metric.date) <= endDate &&
-      (platform ? metric.platform === platform : true)
-    );
+    const query = db
+      .select()
+      .from(campaignMetrics)
+      .where(
+        and(
+          eq(campaignMetrics.userId, userId),
+          gte(campaignMetrics.date, startDate),
+          lte(campaignMetrics.date, endDate),
+          platform ? eq(campaignMetrics.platform, platform) : undefined
+        )
+      );
+      
+    return await query;
   }
   
   // Analytics operations
@@ -328,7 +335,7 @@ export class MemStorage implements IStorage {
     }
     
     // Add TikTok as not connected for demo
-    if (!result.some(r => r.platform === 'tiktok_ads')) {
+    if (!result.some(r => r.platform === 'tiktok_ads') && connections.length === 0) {
       result.push({
         platform: 'tiktok_ads',
         spend: 0,
@@ -491,53 +498,122 @@ export class MemStorage implements IStorage {
       dateMap.set(date, { total: 0 });
     }
     
-    // Aggregate metrics by date and platform
-    for (const m of metrics) {
-      const date = new Date(m.date).toISOString().split('T')[0];
-      const data = dateMap.get(date) || { total: 0 };
+    // Aggregate metrics by date
+    for (const metric of metrics) {
+      const dateStr = new Date(metric.date).toISOString().split('T')[0];
+      const entry = dateMap.get(dateStr);
       
-      let value = 0;
-      switch (metric) {
-        case 'spend':
-          value = m.spend || 0;
-          break;
-        case 'roas':
-          // Calculate ROAS - assuming each conversion is worth $100 for demo purposes
-          const conversionValue = (m.conversions || 0) * 100;
-          value = (m.spend || 0) > 0 ? conversionValue / (m.spend || 0) : 0;
-          break;
-        case 'conversions':
-          value = m.conversions || 0;
-          break;
-        case 'ctr':
-          value = (m.impressions || 0) > 0 ? (m.clicks || 0) / (m.impressions || 0) : 0;
-          break;
+      if (entry) {
+        // Add platform-specific value
+        const platformKey = metric.platform;
+        entry[platformKey] = (entry[platformKey] || 0) + getMetricValue(metric, metric);
+        
+        // Update total
+        entry.total += getMetricValue(metric, metric);
       }
-      
-      // Add to platform-specific value
-      data[m.platform] = (data[m.platform] || 0) + value;
-      
-      // Add to total
-      data.total += value;
-      
-      dateMap.set(date, data);
     }
     
-    // Convert to array and sort by date
-    return dates.map(date => {
-      const data = dateMap.get(date) || { total: 0 };
-      return {
-        date,
-        ...data
-      };
-    });
+    // Convert to array of data points
+    const result: PerformanceTimeseriesPoint[] = [];
+    
+    for (const [date, values] of dateMap.entries()) {
+      if (platform) {
+        // If platform is specified, return platform-specific data points
+        result.push({
+          date,
+          [metric]: values[platform] || 0
+        });
+      } else {
+        // Otherwise, return total
+        result.push({
+          date,
+          [metric]: values.total
+        });
+      }
+    }
+    
+    // If we have no data, provide some sample data for demo
+    if (result.every(point => point[metric] === 0)) {
+      // Generate random values
+      for (let i = 0; i < result.length; i++) {
+        let value;
+        
+        switch (metric) {
+          case 'spend':
+            value = Math.random() * 500 + 500; // 500-1000
+            break;
+          case 'roas':
+            value = Math.random() * 3 + 1; // 1-4
+            break;
+          case 'conversions':
+            value = Math.floor(Math.random() * 40 + 10); // 10-50
+            break;
+          case 'ctr':
+            value = Math.random() * 0.05 + 0.01; // 1%-6%
+            break;
+          default:
+            value = 0;
+        }
+        
+        result[i][metric] = value;
+      }
+    }
+    
+    return result;
   }
   
   async getMetricInsights(userId: number): Promise<MetricInsight[]> {
-    // For development, return sample insights
-    return this.sampleInsights;
+    // For now, return some sample insights
+    // In a real implementation, we would analyze the metrics and generate insights
+    return [
+      {
+        type: 'improvement',
+        title: 'Performance Improvement',
+        message: 'Facebook ROAS increased by 24% in the last 7 days compared to the previous period.',
+        timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString() // 10 minutes ago
+      },
+      {
+        type: 'warning',
+        title: 'Budget Warning',
+        message: 'Google Ads "Summer Collection" campaign has spent 85% of its budget with 10 days remaining.',
+        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() // 2 hours ago
+      },
+      {
+        type: 'alert',
+        title: 'Conversion Drop',
+        message: 'Instagram "Product Showcase" campaign conversions dropped by 32% in the last 3 days.',
+        timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() // 1 day ago
+      },
+      {
+        type: 'recommendation',
+        title: 'Recommendation',
+        message: 'Consider reallocating budget from "Brand Awareness" to "New Product Launch" for better ROAS.',
+        timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() // 2 days ago
+      }
+    ];
   }
 }
 
-// Export storage instance
-export const storage = new MemStorage();
+// Helper function to get metric value
+function getMetricValue(metric: CampaignMetric, metricType: string): number {
+  switch (metricType) {
+    case 'spend':
+      return metric.spend || 0;
+    case 'impressions':
+      return metric.impressions || 0;
+    case 'clicks':
+      return metric.clicks || 0;
+    case 'conversions':
+      return metric.conversions || 0;
+    case 'ctr':
+      return metric.ctr || 0;
+    case 'cpc':
+      return metric.cpc || 0;
+    case 'roas':
+      return metric.roas || 0;
+    default:
+      return 0;
+  }
+}
+
+export const storage = new DatabaseStorage();
